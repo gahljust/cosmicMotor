@@ -1,4 +1,4 @@
-# Stepping_motor_gui
+# Cosmic Ray Stand Motor GUI
 
 This project provides a Graphical User Interface (GUI) for controlling a motor. The GUI is written in C using the GTK+3 library.
 
@@ -23,7 +23,7 @@ sudo apt install gcc libgtk-3-dev pkg-config
 After you have installed the required packages, you can compile the program using gcc:
 
 ```bash
-gcc `pkg-config --cflags gtk+-3.0` -o steppingMotor steppingMotor.c `pkg-config --libs gtk+-3.0`
+gcc `pkg-config --cflags gtk+-3.0` -o cosmicMotor cosmic_motor.c `pkg-config --libs gtk+-3.0`
 ```
 This command tells gcc to compile the file motor_gui.c and link it with the libraries used by GTK+3, creating an executable file called motor_gui.
 
@@ -31,7 +31,7 @@ This command tells gcc to compile the file motor_gui.c and link it with the libr
 After compiling the program, you can run it with the following command:
 
 ```bash
-./steppingMotor
+./cosmicMotor
 ```
 
 Instructional for Mac Users
@@ -65,13 +65,13 @@ brew install gcc
 Navigate to the repository directory and compile the source code. Replace <source_file> with the name of your C file:
 
 ```bash
-gcc `pkg-config --cflags gtk+-3.0` -o steppingMotor steppingMotor.c `pkg-config --libs gtk+-3.0`
+gcc `pkg-config --cflags gtk+-3.0` -o cosmicMotor cosmic_motor.c `pkg-config --libs gtk+-3.0`
 ```
 
 ## Step 6: Run the Program
 
 ```bash
-./steppingMotor
+./cosmicMotor
 ```
 
 The GUI of the program should now appear on your screen.
