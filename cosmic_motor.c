@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-// #define MOCK_HARDWARE
+#define MOCK_HARDWARE
 int fd; // File descriptor for the port
 
 #ifdef MOCK_HARDWARE
@@ -303,45 +303,76 @@ int main(int argc, char **argv)
     online();
     set_motors();
 
+    int width = 300;
+    int height = 100;
+
+    GtkCssProvider *provider = gtk_css_provider_new();
+    const char *css =
+        "button { "
+        "   padding: 40px; "
+        "   font-size: 20px; "
+        "   background-color: #DCEEFB; "
+        "}"
+        "label { "
+        "   font-size: 16px; " // Adjust the font size as needed
+        "}";
+    gtk_css_provider_load_from_data(provider, css, -1, NULL);
+
+    gtk_style_context_add_provider_for_screen(gdk_screen_get_default(),
+                                              GTK_STYLE_PROVIDER(provider),
+                                              GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+
     GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(window), "Motor Controller");
     gtk_window_set_default_size(GTK_WINDOW(window), 500, 200);
 
     GtkWidget *start_limit_button = gtk_button_new_with_label("Start Limit Switch");
     g_signal_connect(start_limit_button, "clicked", G_CALLBACK(start_limit_button_clicked_cb), NULL);
+    gtk_widget_set_size_request(start_limit_button, width, height); // Width = width, Height = height
 
     GtkWidget *end_limit_button = gtk_button_new_with_label("End Limit Switch");
     g_signal_connect(end_limit_button, "clicked", G_CALLBACK(end_limit_button_clicked_cb), NULL);
+    gtk_widget_set_size_request(end_limit_button, width, height); // Width = width, Height = height
 
     GtkWidget *set_zero_button = gtk_button_new_with_label("Set Position to Zero");
     g_signal_connect(set_zero_button, "clicked", G_CALLBACK(set_zero_button_clicked_cb), NULL);
+    gtk_widget_set_size_request(set_zero_button, width, height); // Width = width, Height = height
 
     GtkWidget *move_button = gtk_button_new_with_label("Move Up (Y)");
     g_signal_connect(move_button, "clicked", G_CALLBACK(move_button_clicked_cb), NULL);
+    gtk_widget_set_size_request(move_button, width, height); // Width = width, Height = height
 
     GtkWidget *move_closer_button = gtk_button_new_with_label("Move Down (Y)");
     g_signal_connect(move_closer_button, "clicked", G_CALLBACK(move_closer_button_clicked_cb), NULL);
+    gtk_widget_set_size_request(move_closer_button, width, height); // Width = width, Height = height
 
     GtkWidget *get_position_button = gtk_button_new_with_label("Get Position");
     g_signal_connect(get_position_button, "clicked", G_CALLBACK(get_position_button_clicked_cb), NULL);
+    gtk_widget_set_size_request(get_position_button, width, height); // Width = width, Height = height
 
     GtkWidget *clear_button = gtk_button_new_with_label("Clear");
     g_signal_connect(clear_button, "clicked", G_CALLBACK(clear_button_clicked_cb), NULL);
+    gtk_widget_set_size_request(clear_button, width, height); // Width = width, Height = height
 
     GtkWidget *kill_button = gtk_button_new_with_label("Kill Op.");
     g_signal_connect(kill_button, "clicked", G_CALLBACK(kill_button_clicked_cb), NULL);
+    gtk_widget_set_size_request(kill_button, width, height); // Width = width, Height = height
 
     GtkWidget *status_button = gtk_button_new_with_label("Status");
     g_signal_connect(status_button, "clicked", G_CALLBACK(status_button_clicked_cb), NULL);
+    gtk_widget_set_size_request(status_button, width, height); // Width = width, Height = height
 
     GtkWidget *close_port_button = gtk_button_new_with_label("Offline");
     g_signal_connect(close_port_button, "clicked", G_CALLBACK(close_port_clicked), NULL);
+    gtk_widget_set_size_request(close_port_button, width, height); // Width = width, Height = height
 
     GtkWidget *move_left_button = gtk_button_new_with_label("Move Left (X)");
     g_signal_connect(move_left_button, "clicked", G_CALLBACK(move_left_button_clicked_cb), NULL);
+    gtk_widget_set_size_request(move_left_button, width, height); // Width = width, Height = height
 
     GtkWidget *move_right_button = gtk_button_new_with_label("Move Right (X)");
     g_signal_connect(move_right_button, "clicked", G_CALLBACK(move_right_button_clicked_cb), NULL);
+    gtk_widget_set_size_request(move_right_button, width, height); // Width = width, Height = height
 
     distance_entry = gtk_entry_new();
 
@@ -375,6 +406,8 @@ int main(int argc, char **argv)
     gtk_container_add(GTK_CONTAINER(movement_commands_frame), movement_commands_grid);
 
     GtkWidget *combined_grid = gtk_grid_new();
+    gtk_grid_set_row_homogeneous(GTK_GRID(combined_grid), TRUE);
+    gtk_grid_set_column_homogeneous(GTK_GRID(combined_grid), TRUE);
     gtk_grid_attach(GTK_GRID(combined_grid), operation_commands_frame, 0, 1, 1, 1);
     gtk_grid_attach(GTK_GRID(combined_grid), movement_commands_frame, 0, 0, 1, 1);
 
@@ -395,10 +428,13 @@ int main(int argc, char **argv)
     GtkWidget *display_frame = gtk_frame_new("Display");
     gtk_container_add(GTK_CONTAINER(display_frame), display_box);
 
+    // Make the window fullscreen
+    gtk_window_fullscreen(GTK_WINDOW(window));
+
     /* Put everything together */
     GtkWidget *hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
-    gtk_box_pack_start(GTK_BOX(hbox), combined_grid, FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(hbox), display_frame, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(hbox), combined_grid, TRUE, TRUE, 0);
+    gtk_box_pack_start(GTK_BOX(hbox), display_frame, TRUE, TRUE, 0);
 
     // Add hbox to the window
     gtk_container_add(GTK_CONTAINER(window), hbox);
