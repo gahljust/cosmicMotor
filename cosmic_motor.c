@@ -8,7 +8,34 @@
 #include <stdlib.h>
 #include <math.h>
 
+// #define MOCK_HARDWARE
 int fd; // File descriptor for the port
+
+#ifdef MOCK_HARDWARE
+// Mock implementations
+
+int open_port(void)
+{
+    printf("Mock: Open port\n");
+    // Implement mock behavior
+    return 1; // Mock file descriptor
+}
+
+void send_command(int fd, char *command)
+{
+    printf("Mock: Sending command - %s\n", command);
+    // Implement mock behavior
+    // Maybe simulate some delay
+}
+
+void read_response(int fd)
+{
+    printf("Mock: Reading response\n");
+    // Implement mock response
+}
+
+#else
+// Actual hardware interaction implementations
 
 int open_port(void)
 {
@@ -46,9 +73,16 @@ void read_response(int fd)
     printf("Received: %s\n", buffer);
 }
 
-static void online_button_clicked_cb(GtkWidget *button, gpointer data)
+#endif
+
+static void start_limit_button_clicked_cb(GtkWidget *button, gpointer data)
 {
-    send_command(fd, "F");
+    send_command(fd, "C, (, I3M0, I1M0,), R");
+}
+
+static void end_limit_button_clicked_cb(GtkWidget *button, gpointer data)
+{
+    send_command(fd, "C, (, I3M-0, I1M-0,), R");
 }
 
 static void online(void)
@@ -66,15 +100,14 @@ static void move_button_clicked_cb(GtkWidget *button, gpointer data)
     const char *distance_str = gtk_entry_get_text(GTK_ENTRY(distance_entry));
     double distance = strtod(distance_str, NULL); // Convert the string to a double
     // Convert the distance to steps by dividing by 0.0025 and rounding to the nearest integer
-    int steps = (int)((distance / 0.0025 + 0.5));                
+    int steps = (int)((distance / 0.0025 + 0.5));
     char command[128];
-    snprintf(command, sizeof(command), "F, PM-0, (,I3M-%d, I1M-%d,), R", steps, steps); 
+    snprintf(command, sizeof(command), "C, (,I3M-%d, I1M-%d,), R", steps, steps);
     // print the steps to the terminal
     printf("Steps: %d\n", steps);
     printf("Command: %s\n", command);
     send_command(fd, command);
     sleep(1);
-   
 }
 
 // Function to handle the "Move" button click
@@ -85,7 +118,7 @@ static void move_closer_button_clicked_cb(GtkWidget *button, gpointer data)
     // Convert the distance to steps by dividing by 0.0025 and rounding to the nearest integer
     int steps = (int)((distance / 0.0025));
     char command[128];
-    snprintf(command, sizeof(command), "C, PM-0, (,I3M%d, I1M%d,), R", steps, steps);
+    snprintf(command, sizeof(command), "C, (,I3M%d, I1M%d,), R", steps, steps);
     // snprintf(command, sizeof(command), "C, I1M%d, R", steps);
     // print the steps to the terminal
     printf("Steps: %d\n", steps);
@@ -94,10 +127,36 @@ static void move_closer_button_clicked_cb(GtkWidget *button, gpointer data)
     sleep(1);
 }
 
-
-static void home_button_clicked_cb(GtkWidget *button, gpointer data)
+static void move_left_button_clicked_cb(GtkWidget *button, gpointer data)
 {
-    send_command(fd, "C, (, I3M0, I1M0,), R");
+    const char *distance_str = gtk_entry_get_text(GTK_ENTRY(distance_entry));
+    double distance = strtod(distance_str, NULL); // Convert the string to a double
+    // Convert the distance to steps by dividing by 0.0025 and rounding to the nearest integer
+    int steps = (int)((distance / 0.0025));
+    char command[128];
+    snprintf(command, sizeof(command), "C, I2M%d, R", steps);
+    // snprintf(command, sizeof(command), "C, I1M%d, R", steps);
+    // print the steps to the terminal
+    printf("Steps: %d\n", steps);
+    printf("Command: %s\n", command);
+    send_command(fd, command);
+    sleep(1);
+}
+
+static void move_right_button_clicked_cb(GtkWidget *button, gpointer data)
+{
+    const char *distance_str = gtk_entry_get_text(GTK_ENTRY(distance_entry));
+    double distance = strtod(distance_str, NULL); // Convert the string to a double
+    // Convert the distance to steps by dividing by 0.0025 and rounding to the nearest integer
+    int steps = (int)((distance / 0.0025));
+    char command[128];
+    snprintf(command, sizeof(command), "C, I2M-%d, R", steps);
+    // snprintf(command, sizeof(command), "C, I1M%d, R", steps);
+    // print the steps to the terminal
+    printf("Steps: %d\n", steps);
+    printf("Command: %s\n", command);
+    send_command(fd, command);
+    sleep(1);
 }
 
 static void set_zero_button_clicked_cb(GtkWidget *button, gpointer data)
@@ -131,35 +190,53 @@ static void status_button_clicked_cb(GtkWidget *button, gpointer data)
             strcpy(buffer, "Jog");
         }
 
-
-        char label_text[64];                                       // Enough space for prefix and position value
-        sprintf(label_text, "Motor Status: %s", buffer);   // Create the new label text with two decimal places
+        char label_text[64];                                     // Enough space for prefix and position value
+        sprintf(label_text, "Motor Status: %s", buffer);         // Create the new label text with two decimal places
         gtk_label_set_text(GTK_LABEL(status_label), label_text); // Set the new label text
     }
-
 }
 
-
-    static void get_position_button_clicked_cb(GtkWidget *button, gpointer data)
+static void get_position_button_clicked_cb(GtkWidget *button, gpointer data)
 {
-    send_command(fd, "X");
-    static char buffer[32];                       // Make buffer static so it remains valid after function returns
-    int n = read(fd, buffer, sizeof(buffer) - 1); // Leave space for null terminator
-    if (n < 0)
-    {
-        perror("Read failed");
-    }
-    else
-    {
-        buffer[n] = '\0';
-        int position = atoi(buffer);                               // Convert the string to an integer
-        double distance_mm = position;//                       // Convert the position to distance in mm
-        char label_text[64];                                       // Enough space for prefix and position value
-        sprintf(label_text, "Position: %.2f", distance_mm);   // Create the new label text with two decimal places
-        gtk_label_set_text(GTK_LABEL(position_label), label_text); // Set the new label text
-    }
-}
+    char buffer[32];
+    int n;
+    int position;
+    double distance_mm;
+    char position_text[128] = ""; // Buffer to hold the combined position text
 
+    // Array of commands and axis names
+    const char *commands[] = {"Y", "Z"};
+    const char *axis_names[] = {"X", "Y"};
+
+    for (int i = 0; i < 2; ++i) // Loop over 2 elements
+    {
+        char commandCopy[10];
+        strcpy(commandCopy, commands[i]);
+        // Send command
+        send_command(fd, commandCopy);
+
+        // Read response
+        n = read(fd, buffer, sizeof(buffer) - 1);
+        if (n < 0)
+        {
+            perror("Read failed");
+            strcat(position_text, axis_names[i]);
+            strcat(position_text, " Position: Error; ");
+        }
+        else
+        {
+            buffer[n] = '\0';
+            position = atoi(buffer);
+            distance_mm = -1.0 * position * 0.0025; // Convert position to mm
+            char single_axis_text[64];
+            sprintf(single_axis_text, "%s Position: %.2f mm; ", axis_names[i], distance_mm);
+            strcat(position_text, single_axis_text);
+        }
+    }
+
+    // Update the position label with the combined position text
+    gtk_label_set_text(GTK_LABEL(position_label), position_text);
+}
 
 static void clear_button_clicked_cb(GtkWidget *button, gpointer data)
 {
@@ -178,53 +255,7 @@ static void close_port_clicked(void)
 
 static void set_motors(void)
 {
-    send_command(fd, "setM1M4, setM3M4");
-}
-
-gboolean prompt_set_motor_home_on_start(void)
-{
-    // Load the CSS style
-    GtkCssProvider *provider;
-    GdkDisplay *display;
-    GdkScreen *screen;
-    display = gdk_display_get_default();
-    screen = gdk_display_get_default_screen(display);
-    provider = gtk_css_provider_new();
-    gtk_style_context_add_provider_for_screen(screen, GTK_STYLE_PROVIDER(provider), GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
-    const gchar *css_style = "dialog { background-color: #ADD8E6; }";
-    gtk_css_provider_load_from_data(GTK_CSS_PROVIDER(provider), css_style, -1, NULL);
-    g_object_unref(provider);
-
-    GtkWidget *dialog = gtk_dialog_new_with_buttons(
-        "Motor Controller",
-        NULL,
-        GTK_DIALOG_MODAL,
-        "_Yes", GTK_RESPONSE_YES,
-        "_No", GTK_RESPONSE_NO,
-        NULL);
-
-    GtkWidget *label = gtk_label_new("Do you want to set the Motor to Home on start?");
-    GtkWidget *content_area = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
-    gtk_container_add(GTK_CONTAINER(content_area), label);
-    gtk_widget_show_all(dialog);
-
-    gint result = gtk_dialog_run(GTK_DIALOG(dialog));
-    switch (result)
-    {
-    case GTK_RESPONSE_YES:
-        // Handle the Yes button being pressed
-        break;
-    case GTK_RESPONSE_NO:
-        // Handle the No button being pressed
-        break;
-    default:
-        // Handle other cases if needed
-        break;
-    }
-
-    gtk_widget_destroy(dialog);
-
-    return (result == GTK_RESPONSE_YES);
+    send_command(fd, "setM1M4, setM2M5, setM3M4");
 }
 
 static gboolean update_gui_callback(gpointer data)
@@ -235,22 +266,14 @@ static gboolean update_gui_callback(gpointer data)
     return G_SOURCE_REMOVE; // Ensures this function is only called once.
 }
 
-void long_running_task()
-{
-    online();
-    home_button_clicked_cb(NULL, NULL);
-
-    // Once done, queue a function to update the GUI.
-    g_idle_add(update_gui_callback, NULL);
-}
-
 int main(int argc, char **argv)
 {
     gtk_init(&argc, &argv);
 
     open_port();
 
-    // configure the port
+#ifndef MOCK_HARDWARE
+    // configure the port only if MOCK_HARDWARE is not defined
     struct termios tty;
     memset(&tty, 0, sizeof tty);
 
@@ -275,13 +298,7 @@ int main(int argc, char **argv)
         printf("Error from tcsetattr: %s\n", strerror(errno));
         return -1;
     }
-
-    // prompt_set_motor_home_on_start();
-    if (prompt_set_motor_home_on_start())
-    {
-        // Start the blocking tasks in a separate thread.
-        g_thread_new("long_task_thread", (GThreadFunc)long_running_task, NULL);
-    }
+#endif
 
     online();
     set_motors();
@@ -290,19 +307,19 @@ int main(int argc, char **argv)
     gtk_window_set_title(GTK_WINDOW(window), "Motor Controller");
     gtk_window_set_default_size(GTK_WINDOW(window), 500, 200);
 
-    GtkWidget *online_button = gtk_button_new_with_label("Online");
-    g_signal_connect(online_button, "clicked", G_CALLBACK(online_button_clicked_cb), NULL);
+    GtkWidget *start_limit_button = gtk_button_new_with_label("Start Limit Switch");
+    g_signal_connect(start_limit_button, "clicked", G_CALLBACK(start_limit_button_clicked_cb), NULL);
 
-    GtkWidget *home_button = gtk_button_new_with_label("Home");
-    g_signal_connect(home_button, "clicked", G_CALLBACK(home_button_clicked_cb), NULL);
+    GtkWidget *end_limit_button = gtk_button_new_with_label("End Limit Switch");
+    g_signal_connect(end_limit_button, "clicked", G_CALLBACK(end_limit_button_clicked_cb), NULL);
 
     GtkWidget *set_zero_button = gtk_button_new_with_label("Set Position to Zero");
     g_signal_connect(set_zero_button, "clicked", G_CALLBACK(set_zero_button_clicked_cb), NULL);
 
-    GtkWidget *move_button = gtk_button_new_with_label("Move Away");
+    GtkWidget *move_button = gtk_button_new_with_label("Move Up (Y)");
     g_signal_connect(move_button, "clicked", G_CALLBACK(move_button_clicked_cb), NULL);
 
-    GtkWidget *move_closer_button = gtk_button_new_with_label("Move Closer");
+    GtkWidget *move_closer_button = gtk_button_new_with_label("Move Down (Y)");
     g_signal_connect(move_closer_button, "clicked", G_CALLBACK(move_closer_button_clicked_cb), NULL);
 
     GtkWidget *get_position_button = gtk_button_new_with_label("Get Position");
@@ -320,28 +337,48 @@ int main(int argc, char **argv)
     GtkWidget *close_port_button = gtk_button_new_with_label("Offline");
     g_signal_connect(close_port_button, "clicked", G_CALLBACK(close_port_clicked), NULL);
 
+    GtkWidget *move_left_button = gtk_button_new_with_label("Move Left (X)");
+    g_signal_connect(move_left_button, "clicked", G_CALLBACK(move_left_button_clicked_cb), NULL);
+
+    GtkWidget *move_right_button = gtk_button_new_with_label("Move Right (X)");
+    g_signal_connect(move_right_button, "clicked", G_CALLBACK(move_right_button_clicked_cb), NULL);
+
     distance_entry = gtk_entry_new();
 
-    GtkWidget *operation_commands_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
-    gtk_box_pack_start(GTK_BOX(operation_commands_box), online_button, FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(operation_commands_box), clear_button, FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(operation_commands_box), kill_button, FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(operation_commands_box), status_button, FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(operation_commands_box), close_port_button, FALSE, FALSE, 0);
+    GtkWidget *operation_commands_grid = gtk_grid_new();
+    gtk_grid_set_row_spacing(GTK_GRID(operation_commands_grid), 6);
+    gtk_grid_set_column_spacing(GTK_GRID(operation_commands_grid), 6);
+
+    gtk_grid_attach(GTK_GRID(operation_commands_grid), clear_button, 0, 0, 1, 1);
+    gtk_grid_attach(GTK_GRID(operation_commands_grid), kill_button, 0, 1, 1, 1);
+    gtk_grid_attach(GTK_GRID(operation_commands_grid), status_button, 1, 0, 1, 1);
+    gtk_grid_attach(GTK_GRID(operation_commands_grid), set_zero_button, 1, 1, 1, 1);
+    gtk_grid_attach(GTK_GRID(operation_commands_grid), get_position_button, 0, 2, 1, 1);
+    gtk_grid_attach(GTK_GRID(operation_commands_grid), close_port_button, 1, 2, 1, 1);
 
     GtkWidget *operation_commands_frame = gtk_frame_new("Operation Commands");
-    gtk_container_add(GTK_CONTAINER(operation_commands_frame), operation_commands_box);
+    gtk_container_add(GTK_CONTAINER(operation_commands_frame), operation_commands_grid);
 
     /* Create the second group of buttons */
-    GtkWidget *movement_commands_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
-    gtk_box_pack_start(GTK_BOX(movement_commands_box), home_button, FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(movement_commands_box), set_zero_button, FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(movement_commands_box), move_button, FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(movement_commands_box), move_closer_button, FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(movement_commands_box), get_position_button, FALSE, FALSE, 0);
+    GtkWidget *movement_commands_grid = gtk_grid_new();
+    gtk_grid_set_row_spacing(GTK_GRID(movement_commands_grid), 6);
+    gtk_grid_set_column_spacing(GTK_GRID(movement_commands_grid), 6);
+
+    gtk_grid_attach(GTK_GRID(movement_commands_grid), start_limit_button, 0, 0, 1, 1);
+    gtk_grid_attach(GTK_GRID(movement_commands_grid), end_limit_button, 1, 0, 1, 1);
+    gtk_grid_attach(GTK_GRID(movement_commands_grid), move_button, 0, 1, 1, 1);
+    gtk_grid_attach(GTK_GRID(movement_commands_grid), move_closer_button, 1, 1, 1, 1);
+    gtk_grid_attach(GTK_GRID(movement_commands_grid), move_left_button, 0, 2, 1, 1);
+    gtk_grid_attach(GTK_GRID(movement_commands_grid), move_right_button, 1, 2, 1, 1);
 
     GtkWidget *movement_commands_frame = gtk_frame_new("Movement Commands");
-    gtk_container_add(GTK_CONTAINER(movement_commands_frame), movement_commands_box);
+    gtk_container_add(GTK_CONTAINER(movement_commands_frame), movement_commands_grid);
+
+    GtkWidget *combined_grid = gtk_grid_new();
+    gtk_grid_attach(GTK_GRID(combined_grid), operation_commands_frame, 0, 1, 1, 1);
+    gtk_grid_attach(GTK_GRID(combined_grid), movement_commands_frame, 0, 0, 1, 1);
+
+    /* Create the display */
 
     GtkWidget *display_box = gtk_box_new(GTK_ORIENTATION_VERTICAL, 5);
 
@@ -351,27 +388,25 @@ int main(int argc, char **argv)
 
     position_label = gtk_label_new("Position (mm): ");
     gtk_box_pack_start(GTK_BOX(display_box), position_label, FALSE, FALSE, 0);
-   
 
     status_label = gtk_label_new("Motor Status: ");
     gtk_box_pack_start(GTK_BOX(display_box), status_label, FALSE, FALSE, 0);
-   
 
     GtkWidget *display_frame = gtk_frame_new("Display");
     gtk_container_add(GTK_CONTAINER(display_frame), display_box);
 
     /* Put everything together */
     GtkWidget *hbox = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 5);
-    gtk_box_pack_start(GTK_BOX(hbox), operation_commands_frame, FALSE, FALSE, 0);
-    gtk_box_pack_start(GTK_BOX(hbox), movement_commands_frame, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(hbox), combined_grid, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(hbox), display_frame, FALSE, FALSE, 0);
 
+    // Add hbox to the window
     gtk_container_add(GTK_CONTAINER(window), hbox);
 
+    // Show all widgets
     gtk_widget_show_all(window);
 
     gtk_main();
-  
 
     return 0;
 }
