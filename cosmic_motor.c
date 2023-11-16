@@ -75,6 +75,16 @@ void read_response(int fd)
 
 #endif
 
+static gboolean on_key_press(GtkWidget *widget, GdkEventKey *event, gpointer user_data)
+{
+    if (event->keyval == GDK_KEY_Escape)
+    {
+        gtk_window_unfullscreen(GTK_WINDOW(gtk_widget_get_toplevel(widget)));
+        return TRUE; // Indicate that the event was handled
+    }
+    return FALSE; // Propagate the event further
+}
+
 static void start_limit_button_clicked_cb(GtkWidget *button, gpointer data)
 {
     send_command(fd, "C, (, I3M0, I1M0,), R");
@@ -325,6 +335,8 @@ int main(int argc, char **argv)
     GtkWidget *window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
     gtk_window_set_title(GTK_WINDOW(window), "Motor Controller");
     gtk_window_set_default_size(GTK_WINDOW(window), 500, 200);
+
+    g_signal_connect(window, "key-press-event", G_CALLBACK(on_key_press), NULL);
 
     GtkWidget *start_limit_button = gtk_button_new_with_label("Start Limit Switch");
     g_signal_connect(start_limit_button, "clicked", G_CALLBACK(start_limit_button_clicked_cb), NULL);
