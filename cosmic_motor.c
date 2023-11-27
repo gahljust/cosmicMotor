@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-#define MOCK_HARDWARE
+// #define MOCK_HARDWARE
 int fd; // File descriptor for the port
 
 #ifdef MOCK_HARDWARE
@@ -40,7 +40,8 @@ void read_response(int fd)
 int open_port(void)
 {
     // fd = open("/dev/tty.usbserial-A601VOHX", O_RDWR | O_NOCTTY | O_NDELAY);
-    fd = open("/dev/tty.usbserial-AI054UCW", O_RDWR | O_NOCTTY | O_NDELAY);
+    fd = open("/dev/ttyUSB0)", O_RDWR | O_NOCTTY | O_NDELAY);
+    // fd = open("/dev/tty.usbserial-AI054UCW", O_RDWR | O_NOCTTY | O_NDELAY);
     if (fd == -1)
     {
         perror("open_port: Unable to open USB port - ");
@@ -276,6 +277,95 @@ static gboolean update_gui_callback(gpointer data)
     return G_SOURCE_REMOVE; // Ensures this function is only called once.
 }
 
+// Declare a struct to pass multiple data items to the callback
+typedef struct
+{
+    char *input;
+    GtkWidget *entry;
+} NumberPadData;
+
+// The callback function for button presses
+void on_button_press(GtkWidget *widget, gpointer data)
+{
+    NumberPadData *npData = (NumberPadData *)data;
+    const char *button_value = gtk_button_get_label(GTK_BUTTON(widget));
+
+    if (strcmp(button_value, "<-") == 0)
+    {
+        // Handle backspace: remove the last character
+        size_t len = strlen(npData->input);
+        if (len > 0)
+            npData->input[len - 1] = '\0';
+    }
+    else
+    {
+        // Append the button's value
+        strcat(npData->input, button_value);
+    }
+
+    gtk_entry_set_text(GTK_ENTRY(npData->entry), npData->input);
+}
+
+// Function to create and show the number pad dialog
+char *show_number_pad(GtkWidget *parent)
+{
+    GtkWidget *dialog, *content_area, *grid;
+
+    // Ensure the parent is a top-level window
+    GtkWidget *toplevel = gtk_widget_get_toplevel(parent);
+    if (!GTK_IS_WINDOW(toplevel))
+    {
+        g_critical("Parent widget is not a window");
+        return NULL;
+    }
+
+    GtkDialogFlags flags = GTK_DIALOG_DESTROY_WITH_PARENT;
+    dialog = gtk_dialog_new_with_buttons("Number Pad",
+                                         GTK_WINDOW(toplevel),
+                                         flags,
+                                         "_Close",
+                                         GTK_RESPONSE_CLOSE,
+                                         NULL);
+
+    content_area = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
+    grid = gtk_grid_new();
+    gtk_container_add(GTK_CONTAINER(content_area), grid);
+
+    char *input = (char *)calloc(100, sizeof(char));
+    GtkWidget *entry = gtk_entry_new();
+    gtk_grid_attach(GTK_GRID(grid), entry, 0, 0, 3, 1);
+
+    NumberPadData npData = {input, entry};
+
+    // Adding buttons 0-9, '.', and backspace
+    const char *buttons[12] = {"7", "8", "9", "4", "5", "6", "1", "2", "3", "0", ".", "<-"};
+    for (int i = 0; i < 12; i++)
+    {
+        GtkWidget *button = gtk_button_new_with_label(buttons[i]);
+        g_signal_connect(button, "clicked", G_CALLBACK(on_button_press), &npData);
+        gtk_grid_attach(GTK_GRID(grid), button, i % 3, 1 + i / 3, 1, 1);
+    }
+
+    gtk_widget_show_all(dialog);
+    gtk_dialog_run(GTK_DIALOG(dialog));
+
+    char *result = strdup(gtk_entry_get_text(GTK_ENTRY(entry)));
+    gtk_widget_destroy(dialog);
+    free(input);
+    return result;
+}
+
+// Callback for when the distance entry box is focused or clicked
+static void on_distance_entry_focus(GtkWidget *widget, GdkEvent *event, gpointer user_data)
+{
+    char *input = show_number_pad(widget);
+    if (input)
+    {
+        gtk_entry_set_text(GTK_ENTRY(widget), input);
+        free(input); // Remember to free the allocated memory
+    }
+}
+
 int main(int argc, char **argv)
 {
     gtk_init(&argc, &argv);
@@ -430,6 +520,9 @@ int main(int argc, char **argv)
     GtkWidget *distance_label = gtk_label_new("Enter the Distance (mm): ");
     gtk_box_pack_start(GTK_BOX(display_box), distance_label, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(display_box), distance_entry, FALSE, FALSE, 0);
+
+    g_signal_connect(G_OBJECT(distance_entry), "focus-in-event", G_CALLBACK(on_distance_entry_focus), NULL);
+    g_signal_connect(G_OBJECT(distance_entry), "button-press-event", G_CALLBACK(on_distance_entry_focus), NULL);
 
     position_label = gtk_label_new("Position (mm): ");
     gtk_box_pack_start(GTK_BOX(display_box), position_label, FALSE, FALSE, 0);
