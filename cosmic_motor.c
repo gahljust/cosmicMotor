@@ -350,11 +350,11 @@ int main(int argc, char **argv)
     g_signal_connect(set_zero_button, "clicked", G_CALLBACK(set_zero_button_clicked_cb), NULL);
     gtk_widget_set_size_request(set_zero_button, width, height); // Width = width, Height = height
 
-    GtkWidget *move_button = gtk_button_new_with_label("Move In (Y)");
+    GtkWidget *move_button = gtk_button_new_with_label("Move Up (Y)");
     g_signal_connect(move_button, "clicked", G_CALLBACK(move_button_clicked_cb), NULL);
     gtk_widget_set_size_request(move_button, width, height); // Width = width, Height = height
 
-    GtkWidget *move_closer_button = gtk_button_new_with_label("Move Out (Y)");
+    GtkWidget *move_closer_button = gtk_button_new_with_label("Move Down (Y)");
     g_signal_connect(move_closer_button, "clicked", G_CALLBACK(move_closer_button_clicked_cb), NULL);
     gtk_widget_set_size_request(move_closer_button, width, height); // Width = width, Height = height
 
