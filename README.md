@@ -83,20 +83,51 @@ Also, please ensure that the USB device path (/dev/tty.usbserial-A601VOHX) is co
 You can check this on a raspberry pi by typing `ls /dev/` while the motor is unplugged, then plugging the motor in and typing `ls /dev/` again and looking at the difference.
 
 ## Usage
-The GUI has several buttons that you can use to control the motor:
 
-Online: Puts the motor online.
-Home: Moves the motor to its home position.
-Set Position to Zero: Sets the current motor position to zero.
-Move Away: Moves the motor a specified distance away.
-Move Closer: Moves the motor a specified distance closer.
-Get Position: Displays the current position of the motor.
-Clear: Clears any pending motor operations.
-Kill Op.: Kills the current motor operation.
-Status: Displays the current status of the motor.
-Offline: Takes the motor offline.
-To use the Move Away and Move Closer commands, enter the distance (in mm) that you want the motor to move in the "Enter the Distance (mm):" text box before clicking the button.
+### Main Functions
+### Start Limit Switch
+### Button Label: "Start Limit Switch"
+* Functionality: Initiates a command to set the start limit of the motor.
+End Limit Switch
+Button Label: "End Limit Switch"
+Functionality: Sends a command to set the end limit of the motor.
+Set Position to Zero
+Button Label: "Set Position to Zero"
+Functionality: Resets the motor's position to zero.
+Move Up (Y) / Move Down (Y)
+Button Labels: "Move Up (Y)" and "Move Down (Y)"
+Functionality: Moves the motor a specific distance in the Y-axis, either up or down, based on the value entered in the distance entry field.
+Move Left (X) / Move Right (X)
+Button Labels: "Move Left (X)" and "Move Right (X)"
+Functionality: Moves the motor a specific distance in the X-axis, either left or right, as per the distance entry.
+Get Position
+Button Label: "Get Position"
+Functionality: Retrieves the current position of the motor and displays it in millimeters.
+Clear
+Button Label: "Clear"
+Functionality: Clears any current operations or commands sent to the motor.
+Kill Op.
+Button Label: "Kill Op."
+Functionality: Immediately stops any ongoing operation of the motor.
+Status
+Button Label: "Status"
+Functionality: Checks and displays the current status of the motor (Running, Busy, or in Jog mode).
+Offline
+Button Label: "Offline"
+Functionality: Sends a command to take the motor offline.
+Additional Features
+Distance Entry
+Widget: Entry field
+Purpose: Allows the user to input the distance for motor movement commands.
+Position Display
+Widget: Label
+Purpose: Displays the current position of the motor in millimeters.
+Motor Status Display
+Widget: Label
+Purpose: Shows the current status of the motor.
+Installation and Setup
+(Provide instructions on how to install and set up the application, including any dependencies or prerequisites.)
 
-Please remember to put the motor online before attempting to control it and to take it offline when you are done using it. ALWAYS use the CLEAR button after every command.
+
 
 
