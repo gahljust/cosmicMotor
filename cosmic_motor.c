@@ -355,15 +355,20 @@ char *show_number_pad(GtkWidget *parent)
     return result;
 }
 
-// Callback for when the distance entry box is focused or clicked
+static gboolean suppress_number_pad = FALSE;
+
 static void on_distance_entry_focus(GtkWidget *widget, GdkEvent *event, gpointer user_data)
 {
-    char *input = show_number_pad(widget);
-    if (input)
+    if (!suppress_number_pad)
     {
-        gtk_entry_set_text(GTK_ENTRY(widget), input);
-        free(input); // Remember to free the allocated memory
+        char *input = show_number_pad(widget);
+        if (input)
+        {
+            gtk_entry_set_text(GTK_ENTRY(widget), input);
+            free(input); // Remember to free the allocated memory
+        }
     }
+    suppress_number_pad = FALSE;
 }
 
 int main(int argc, char **argv)
