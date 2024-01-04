@@ -40,7 +40,7 @@ void read_response(int fd)
 int open_port(void)
 {
     // fd = open("/dev/tty.usbserial-A601VOHX", O_RDWR | O_NOCTTY | O_NDELAY);
-    fd = open("/dev/ttyUSB0)", O_RDWR | O_NOCTTY | O_NDELAY);
+    fd = open("/dev/ttyUSB0", O_RDWR | O_NOCTTY | O_NDELAY);
     // fd = open("/dev/tty.usbserial-AI054UCW", O_RDWR | O_NOCTTY | O_NDELAY);
     if (fd == -1)
     {
