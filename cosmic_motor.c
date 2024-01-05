@@ -76,6 +76,28 @@ void read_response(int fd)
 
 #endif
 
+gboolean show_confirmation_dialog(GtkWidget *parent)
+{
+    GtkWidget *toplevel = gtk_widget_get_toplevel(parent);
+    if (!GTK_IS_WINDOW(toplevel))
+    {
+        g_warning("Parent widget is not a window");
+        return FALSE;
+    }
+
+    GtkWidget *dialog = gtk_message_dialog_new(GTK_WINDOW(toplevel),
+                                               GTK_DIALOG_DESTROY_WITH_PARENT,
+                                               GTK_MESSAGE_QUESTION,
+                                               GTK_BUTTONS_YES_NO,
+                                               "Are you sure?");
+    gtk_window_set_title(GTK_WINDOW(dialog), "Confirm Action");
+
+    gint response = gtk_dialog_run(GTK_DIALOG(dialog));
+    gtk_widget_destroy(dialog);
+
+    return (response == GTK_RESPONSE_YES);
+}
+
 static gboolean on_key_press(GtkWidget *widget, GdkEventKey *event, gpointer user_data)
 {
     if (event->keyval == GDK_KEY_Escape)
@@ -88,14 +110,19 @@ static gboolean on_key_press(GtkWidget *widget, GdkEventKey *event, gpointer use
 
 static void start_limit_button_clicked_cb(GtkWidget *button, gpointer data)
 {
-    send_command(fd, "C, (, I3M0, I1M0,), R");
+    if (show_confirmation_dialog(button))
+    {
+        send_command(fd, "C, (, I3M0, I1M0,), R");
+    }
 }
 
 static void end_limit_button_clicked_cb(GtkWidget *button, gpointer data)
 {
-    send_command(fd, "C, (, I3M-0, I1M-0,), R");
+    if (show_confirmation_dialog(button))
+    {
+        send_command(fd, "C, (, I3M-0, I1M-0,), R");
+    }
 }
-
 static void online(void)
 {
     send_command(fd, "F");
@@ -108,66 +135,78 @@ GtkWidget *status_label;
 // Function to handle the "Move" button click
 static void move_button_clicked_cb(GtkWidget *button, gpointer data)
 {
-    const char *distance_str = gtk_entry_get_text(GTK_ENTRY(distance_entry));
-    double distance = strtod(distance_str, NULL); // Convert the string to a double
-    // Convert the distance to steps by dividing by 0.0025 and rounding to the nearest integer
-    int steps = (int)((distance / 0.0025 + 0.5));
-    char command[128];
-    snprintf(command, sizeof(command), "C, (,I3M-%d, I1M-%d,), R", steps, steps);
-    // print the steps to the terminal
-    printf("Steps: %d\n", steps);
-    printf("Command: %s\n", command);
-    send_command(fd, command);
-    sleep(1);
+    if (show_confirmation_dialog(button))
+    {
+        const char *distance_str = gtk_entry_get_text(GTK_ENTRY(distance_entry));
+        double distance = strtod(distance_str, NULL); // Convert the string to a double
+        // Convert the distance to steps by dividing by 0.0025 and rounding to the nearest integer
+        int steps = (int)((distance / 0.0025 + 0.5));
+        char command[128];
+        snprintf(command, sizeof(command), "C, (,I3M-%d, I1M-%d,), R", steps, steps);
+        // print the steps to the terminal
+        printf("Steps: %d\n", steps);
+        printf("Command: %s\n", command);
+        send_command(fd, command);
+        sleep(1);
+    }
 }
 
 // Function to handle the "Move" button click
 static void move_closer_button_clicked_cb(GtkWidget *button, gpointer data)
 {
-    const char *distance_str = gtk_entry_get_text(GTK_ENTRY(distance_entry));
-    double distance = strtod(distance_str, NULL); // Convert the string to a double
-    // Convert the distance to steps by dividing by 0.0025 and rounding to the nearest integer
-    int steps = (int)((distance / 0.0025));
-    char command[128];
-    snprintf(command, sizeof(command), "C, (,I3M%d, I1M%d,), R", steps, steps);
-    // snprintf(command, sizeof(command), "C, I1M%d, R", steps);
-    // print the steps to the terminal
-    printf("Steps: %d\n", steps);
-    printf("Command: %s\n", command);
-    send_command(fd, command);
-    sleep(1);
+    if (show_confirmation_dialog(button))
+    {
+        const char *distance_str = gtk_entry_get_text(GTK_ENTRY(distance_entry));
+        double distance = strtod(distance_str, NULL); // Convert the string to a double
+        // Convert the distance to steps by dividing by 0.0025 and rounding to the nearest integer
+        int steps = (int)((distance / 0.0025));
+        char command[128];
+        snprintf(command, sizeof(command), "C, (,I3M%d, I1M%d,), R", steps, steps);
+        // snprintf(command, sizeof(command), "C, I1M%d, R", steps);
+        // print the steps to the terminal
+        printf("Steps: %d\n", steps);
+        printf("Command: %s\n", command);
+        send_command(fd, command);
+        sleep(1);
+    }
 }
 
 static void move_left_button_clicked_cb(GtkWidget *button, gpointer data)
 {
-    const char *distance_str = gtk_entry_get_text(GTK_ENTRY(distance_entry));
-    double distance = strtod(distance_str, NULL); // Convert the string to a double
-    // Convert the distance to steps by dividing by 0.0025 and rounding to the nearest integer
-    int steps = (int)((distance / 0.0025));
-    char command[128];
-    snprintf(command, sizeof(command), "C, I2M%d, R", steps);
-    // snprintf(command, sizeof(command), "C, I1M%d, R", steps);
-    // print the steps to the terminal
-    printf("Steps: %d\n", steps);
-    printf("Command: %s\n", command);
-    send_command(fd, command);
-    sleep(1);
+    if (show_confirmation_dialog(button))
+    {
+        const char *distance_str = gtk_entry_get_text(GTK_ENTRY(distance_entry));
+        double distance = strtod(distance_str, NULL); // Convert the string to a double
+        // Convert the distance to steps by dividing by 0.0025 and rounding to the nearest integer
+        int steps = (int)((distance / 0.0025));
+        char command[128];
+        snprintf(command, sizeof(command), "C, I2M%d, R", steps);
+        // snprintf(command, sizeof(command), "C, I1M%d, R", steps);
+        // print the steps to the terminal
+        printf("Steps: %d\n", steps);
+        printf("Command: %s\n", command);
+        send_command(fd, command);
+        sleep(1);
+    }
 }
 
 static void move_right_button_clicked_cb(GtkWidget *button, gpointer data)
 {
-    const char *distance_str = gtk_entry_get_text(GTK_ENTRY(distance_entry));
-    double distance = strtod(distance_str, NULL); // Convert the string to a double
-    // Convert the distance to steps by dividing by 0.0025 and rounding to the nearest integer
-    int steps = (int)((distance / 0.0025));
-    char command[128];
-    snprintf(command, sizeof(command), "C, I2M-%d, R", steps);
-    // snprintf(command, sizeof(command), "C, I1M%d, R", steps);
-    // print the steps to the terminal
-    printf("Steps: %d\n", steps);
-    printf("Command: %s\n", command);
-    send_command(fd, command);
-    sleep(1);
+    if (show_confirmation_dialog(button))
+    {
+        const char *distance_str = gtk_entry_get_text(GTK_ENTRY(distance_entry));
+        double distance = strtod(distance_str, NULL); // Convert the string to a double
+        // Convert the distance to steps by dividing by 0.0025 and rounding to the nearest integer
+        int steps = (int)((distance / 0.0025));
+        char command[128];
+        snprintf(command, sizeof(command), "C, I2M-%d, R", steps);
+        // snprintf(command, sizeof(command), "C, I1M%d, R", steps);
+        // print the steps to the terminal
+        printf("Steps: %d\n", steps);
+        printf("Command: %s\n", command);
+        send_command(fd, command);
+        sleep(1);
+    }
 }
 
 static void set_zero_button_clicked_cb(GtkWidget *button, gpointer data)
@@ -372,6 +411,10 @@ int main(int argc, char **argv)
     gtk_window_set_title(GTK_WINDOW(window), "Motor Controller");
     gtk_window_set_default_size(GTK_WINDOW(window), 500, 200);
 
+    GtkWidget *scrolled_window = gtk_scrolled_window_new(NULL, NULL);
+    gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scrolled_window),
+                                   GTK_POLICY_AUTOMATIC, GTK_POLICY_AUTOMATIC);
+
     g_signal_connect(window, "key-press-event", G_CALLBACK(on_key_press), NULL);
 
     GtkWidget *start_limit_button = gtk_button_new_with_label("Start Limit Switch");
@@ -490,8 +533,11 @@ int main(int argc, char **argv)
     gtk_box_pack_start(GTK_BOX(hbox), combined_grid, TRUE, TRUE, 0);
     gtk_box_pack_start(GTK_BOX(hbox), display_frame, TRUE, TRUE, 0);
 
-    // Add hbox to the window
-    gtk_container_add(GTK_CONTAINER(window), hbox);
+    // Add your main container to the scrolled window
+    gtk_container_add(GTK_CONTAINER(scrolled_window), hbox); // Assuming hbox is your main container
+
+    // Add to the window
+    gtk_container_add(GTK_CONTAINER(window), scrolled_window);
 
     // Show all widgets
     gtk_widget_show_all(window);
