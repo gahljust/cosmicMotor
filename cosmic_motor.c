@@ -277,98 +277,39 @@ static gboolean update_gui_callback(gpointer data)
     return G_SOURCE_REMOVE; // Ensures this function is only called once.
 }
 
-// Declare a struct to pass multiple data items to the callback
-typedef struct
+// Callback function for number pad buttons
+void on_number_pad_button_press(GtkWidget *widget, gpointer data)
 {
-    char *input;
-    GtkWidget *entry;
-} NumberPadData;
-
-// The callback function for button presses
-void on_button_press(GtkWidget *widget, gpointer data)
-{
-    NumberPadData *npData = (NumberPadData *)data;
     const char *button_value = gtk_button_get_label(GTK_BUTTON(widget));
+    static char input[100] = {0}; // Buffer for the input string
 
     if (strcmp(button_value, "<-") == 0)
-    {
-        // Handle backspace: remove the last character
-        size_t len = strlen(npData->input);
+    { // Backspace
+        int len = strlen(input);
         if (len > 0)
-            npData->input[len - 1] = '\0';
+            input[len - 1] = '\0';
     }
-    else
+    else if (strlen(input) < sizeof(input) - 1)
     {
-        // Append the button's value
-        strcat(npData->input, button_value);
+        strcat(input, button_value); // Append number
     }
 
-    gtk_entry_set_text(GTK_ENTRY(npData->entry), npData->input);
+    gtk_entry_set_text(GTK_ENTRY(distance_entry), input); // Update the display
 }
 
-// Function to create and show the number pad dialog
-char *show_number_pad(GtkWidget *parent)
+// Function to create number pad
+void create_number_pad(GtkWidget *parent)
 {
-    GtkWidget *dialog, *content_area, *grid;
+    GtkWidget *grid = gtk_grid_new();
+    gtk_container_add(GTK_CONTAINER(parent), grid);
 
-    // Ensure the parent is a top-level window
-    GtkWidget *toplevel = gtk_widget_get_toplevel(parent);
-    if (!GTK_IS_WINDOW(toplevel))
-    {
-        g_critical("Parent widget is not a window");
-        return NULL;
-    }
-
-    GtkDialogFlags flags = GTK_DIALOG_DESTROY_WITH_PARENT;
-    dialog = gtk_dialog_new_with_buttons("Number Pad",
-                                         GTK_WINDOW(toplevel),
-                                         flags,
-                                         "_Close",
-                                         GTK_RESPONSE_CLOSE,
-                                         NULL);
-
-    content_area = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
-    grid = gtk_grid_new();
-    gtk_container_add(GTK_CONTAINER(content_area), grid);
-
-    char *input = (char *)calloc(100, sizeof(char));
-    GtkWidget *entry = gtk_entry_new();
-    gtk_grid_attach(GTK_GRID(grid), entry, 0, 0, 3, 1);
-
-    NumberPadData npData = {input, entry};
-
-    // Adding buttons 0-9, '.', and backspace
     const char *buttons[12] = {"7", "8", "9", "4", "5", "6", "1", "2", "3", "0", ".", "<-"};
     for (int i = 0; i < 12; i++)
     {
         GtkWidget *button = gtk_button_new_with_label(buttons[i]);
-        g_signal_connect(button, "clicked", G_CALLBACK(on_button_press), &npData);
-        gtk_grid_attach(GTK_GRID(grid), button, i % 3, 1 + i / 3, 1, 1);
+        g_signal_connect(button, "clicked", G_CALLBACK(on_number_pad_button_press), NULL);
+        gtk_grid_attach(GTK_GRID(grid), button, i % 3, i / 3, 1, 1);
     }
-
-    gtk_widget_show_all(dialog);
-    gtk_dialog_run(GTK_DIALOG(dialog));
-
-    char *result = strdup(gtk_entry_get_text(GTK_ENTRY(entry)));
-    gtk_widget_destroy(dialog);
-    free(input);
-    return result;
-}
-
-static gboolean suppress_number_pad = FALSE;
-
-static void on_distance_entry_focus(GtkWidget *widget, GdkEvent *event, gpointer user_data)
-{
-    if (!suppress_number_pad)
-    {
-        char *input = show_number_pad(widget);
-        if (input)
-        {
-            gtk_entry_set_text(GTK_ENTRY(widget), input);
-            free(input); // Remember to free the allocated memory
-        }
-    }
-    suppress_number_pad = FALSE;
 }
 
 int main(int argc, char **argv)
@@ -481,6 +422,10 @@ int main(int argc, char **argv)
     g_signal_connect(move_right_button, "clicked", G_CALLBACK(move_right_button_clicked_cb), NULL);
     gtk_widget_set_size_request(move_right_button, width, height); // Width = width, Height = height
 
+    // Create the number pad
+    GtkWidget *number_pad_frame = gtk_frame_new("Number Pad");
+    create_number_pad(number_pad_frame);
+
     distance_entry = gtk_entry_new();
 
     GtkWidget *operation_commands_grid = gtk_grid_new();
@@ -526,14 +471,13 @@ int main(int argc, char **argv)
     gtk_box_pack_start(GTK_BOX(display_box), distance_label, FALSE, FALSE, 0);
     gtk_box_pack_start(GTK_BOX(display_box), distance_entry, FALSE, FALSE, 0);
 
-    g_signal_connect(G_OBJECT(distance_entry), "focus-in-event", G_CALLBACK(on_distance_entry_focus), NULL);
-    g_signal_connect(G_OBJECT(distance_entry), "button-press-event", G_CALLBACK(on_distance_entry_focus), NULL);
-
     position_label = gtk_label_new("Position (mm): ");
     gtk_box_pack_start(GTK_BOX(display_box), position_label, FALSE, FALSE, 0);
 
     status_label = gtk_label_new("Motor Status: ");
     gtk_box_pack_start(GTK_BOX(display_box), status_label, FALSE, FALSE, 0);
+
+    gtk_box_pack_start(GTK_BOX(display_box), number_pad_frame, FALSE, FALSE, 0); // Add number pad here
 
     GtkWidget *display_frame = gtk_frame_new("Display");
     gtk_container_add(GTK_CONTAINER(display_frame), display_box);
