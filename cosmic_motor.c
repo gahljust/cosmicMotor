@@ -178,7 +178,7 @@ static void move_left_button_clicked_cb(GtkWidget *button, gpointer data)
         const char *distance_str = gtk_entry_get_text(GTK_ENTRY(distance_entry));
         double distance = strtod(distance_str, NULL); // Convert the string to a double
         // Convert the distance to steps by dividing by 0.0025 and rounding to the nearest integer
-        int steps = (int)((distance / 0.0025));
+        int steps = (int)((distance / 0.005));
         char command[128];
         snprintf(command, sizeof(command), "C, I2M%d, R", steps);
         // snprintf(command, sizeof(command), "C, I1M%d, R", steps);
@@ -197,7 +197,7 @@ static void move_right_button_clicked_cb(GtkWidget *button, gpointer data)
         const char *distance_str = gtk_entry_get_text(GTK_ENTRY(distance_entry));
         double distance = strtod(distance_str, NULL); // Convert the string to a double
         // Convert the distance to steps by dividing by 0.0025 and rounding to the nearest integer
-        int steps = (int)((distance / 0.0025));
+        int steps = (int)((distance / 0.005));
         char command[128];
         snprintf(command, sizeof(command), "C, I2M-%d, R", steps);
         // snprintf(command, sizeof(command), "C, I1M%d, R", steps);
